@@ -1,4 +1,10 @@
-import CountUpJs from "react-countup";
+import * as ReactCountUpModule from "react-countup";
+
+// Vite's CJS/ESM interop for this package can sometimes wrap the whole
+// module as the default export instead of just the component — this
+// resolves whichever shape it actually gave us at runtime.
+const CountUpJs =
+  ReactCountUpModule.default?.default || ReactCountUpModule.default || ReactCountUpModule;
 
 // Animates a numeric value up from 0 on scroll into view. Mixed strings
 // (e.g. "₹18.4L", "99.98%", "212ms") are split into a numeric run plus a

@@ -32,6 +32,7 @@ import AdminExamInstructions from "./pages/dashboard/admin/instructions/ExamInst
 import SuperadminDashboard from "./pages/dashboard/superadmin/SuperadminDashboard";
 import SuperadminQuestionBank from "./pages/dashboard/superadmin/questions/QuestionBank";
 import SuperadminExamInstructions from "./pages/dashboard/superadmin/instructions/ExamInstructions";
+import AddCategory from "./pages/dashboard/superadmin/category/AddCategory";
 import CandidateProfile from "./pages/dashboard/candidate/profile/CandidateProfile";
 import "./App.css";
 
@@ -88,6 +89,7 @@ export default function App() {
               <Route path="/dashboard/superadmin" element={<SuperadminDashboard />} />
               <Route path="/dashboard/superadmin/questions" element={<SuperadminQuestionBank />} />
               <Route path="/dashboard/superadmin/instructions" element={<SuperadminExamInstructions />} />
+              <Route path="/dashboard/superadmin/category" element={<AddCategory />} />
             </Routes>
           </AnimatePresence>
         </main>

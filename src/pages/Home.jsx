@@ -358,6 +358,15 @@ export default function Home() {
         return;
       }
 
+      // --- STORE JWT TOKEN IN COOKIE ---
+      if (response.data.token) {
+        const maxAge = 24 * 60 * 60; // 1 day in seconds
+        // Only append '; Secure' when serving over HTTPS so localhost HTTP testing works
+        const secureFlag = window.location.protocol === "https:" ? "; Secure" : "";
+        document.cookie = `token=${response.data.token}; path=/; max-age=${maxAge}; SameSite=Lax${secureFlag}`;
+      }
+
+      // --- STORE USER INFO IN LOCALSTORAGE ---
       localStorage.setItem("userType", authTab);
       localStorage.setItem("userData", JSON.stringify(response.data));
 
@@ -367,6 +376,7 @@ export default function Home() {
         localStorage.removeItem("rememberedEmail");
       }
 
+      // Navigate to respective dashboard
       navigate(authTab === "candidate" ? "/dashboard/candidate" : "/dashboard/admin");
     } catch (err) {
       console.error("Login Error:", err);
