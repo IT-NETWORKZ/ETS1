@@ -390,6 +390,7 @@
   margin-bottom: 18px;
   max-height: 360px;
   overflow-y: auto;
+  padding:10px;
   padding-right: 4px;
 }
 
@@ -660,4 +661,23 @@
   .examselect__grid { grid-template-columns: 1fr; }
   .examrunner { grid-template-columns: 1fr; }
   .palette { position: static; }
+}
+
+/* ---- Mobile fallback for focus-mode lock (no native Fullscreen API, e.g. iOS Safari) ---- */
+@media (max-width: 680px) {
+  .demoexam--locked {
+    position: fixed;
+    inset: 0;
+    height: 100dvh; /* dvh avoids the jump caused by mobile browser chrome show/hide */
+    overflow-y: auto;
+    z-index: 40;
+    background: var(--mist-100);
+  }
+
+  .examcard { min-height: 0; padding: 22px 18px; }
+  .examcard__question { font-size: 16px; }
+
+  .palette__grid { grid-template-columns: repeat(4, 1fr); }
+
+  .examrunner { gap: 16px; }
 }

@@ -12,6 +12,7 @@ import { loadHistory, saveAttempt, formatDuration, formatDate } from "../data/ex
 import "./DemoExam.css";
 
 const DURATION = 10 * 60; // 10 minutes, matches "10 min." on the source site
+const MAX_VIOLATIONS = 3;
 
 function formatTime(s) {
   const m = Math.floor(s / 60).toString().padStart(2, "0");
@@ -27,7 +28,12 @@ function computeScore(questions, answers) {
   return { correct, total: questions.length };
 }
 
-const MAX_VIOLATIONS = 3;
+// iOS Safari has no Fullscreen API at all (only <video> can go fullscreen there).
+// Detect support up front instead of discovering it only when the call silently fails.
+function fullscreenSupported() {
+  const el = document.documentElement;
+  return !!(el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen);
+}
 
 async function requestFullscreenSafe(el) {
   const target = el || document.documentElement;
@@ -36,7 +42,7 @@ async function requestFullscreenSafe(el) {
     else if (target.webkitRequestFullscreen) await target.webkitRequestFullscreen();
     else if (target.msRequestFullscreen) await target.msRequestFullscreen();
   } catch {
-    /* fullscreen may be blocked in some environments — exam still continues windowed */
+    /* fullscreen may be blocked or unsupported — exam still continues in the CSS-locked layout */
   }
 }
 
@@ -71,6 +77,7 @@ export default function DemoExam() {
   const [showMalpractice, setShowMalpractice] = useState(false);
   const [showSubmitSuccess, setShowSubmitSuccess] = useState(false);
   const [keyLockNotice, setKeyLockNotice] = useState(false);
+  const [fsSupported] = useState(fullscreenSupported); // computed once, device doesn't change mid-session
   const keyNoticeRef = useRef(0);
   const keyNoticeTimeoutRef = useRef(null);
   const timerRef = useRef(null);
@@ -135,8 +142,14 @@ export default function DemoExam() {
       if (document.hidden) registerViolation("tabswitch");
     }
 
-    document.addEventListener("fullscreenchange", handleFsChange);
-    document.addEventListener("webkitfullscreenchange", handleFsChange);
+    // Only police real fullscreen-exit events on browsers that actually support the
+    // Fullscreen API. On iOS Safari fullscreen never truly engages, so this event
+    // would never/incorrectly fire — we rely on the CSS-locked layout there instead
+    // and still enforce the tab-switch rule everywhere.
+    if (fsSupported) {
+      document.addEventListener("fullscreenchange", handleFsChange);
+      document.addEventListener("webkitfullscreenchange", handleFsChange);
+    }
     document.addEventListener("visibilitychange", handleVisibility);
     return () => {
       document.removeEventListener("fullscreenchange", handleFsChange);
@@ -144,7 +157,7 @@ export default function DemoExam() {
       document.removeEventListener("visibilitychange", handleVisibility);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stage]);
+  }, [stage, fsSupported]);
 
   // Always leave fullscreen if the user navigates away from this page entirely
   useEffect(() => () => exitFullscreenSafe(), []);
@@ -226,6 +239,8 @@ export default function DemoExam() {
     setFocusWarning(null);
     suppressFocusRef.current = false;
     setStage("exam");
+    // Call immediately (not after any await) so mobile browsers still treat this
+    // as a direct result of the user's tap — delayed calls get silently rejected.
     requestFullscreenSafe(examRootRef.current);
   }
 
@@ -369,6 +384,7 @@ export default function DemoExam() {
           <motion.div key="instructions" className="demoexam__stage" {...fade}>
             <Instructions
               subjectName={subjectName}
+              fsSupported={fsSupported}
               onBack={() => setStage("select")}
               onStart={startExam}
             />
@@ -648,7 +664,7 @@ function SelectSubject({ subjectId, onChange, onNext, onHistory }) {
   );
 }
 
-function Instructions({ subjectName, onBack, onStart }) {
+function Instructions({ subjectName, fsSupported, onBack, onStart }) {
   return (
     <div className="container instructions">
       <motion.div
@@ -664,7 +680,12 @@ function Instructions({ subjectName, onBack, onStart }) {
           <li>Use the question palette to jump between questions at any time.</li>
           <li>You can mark a question for review and return to it later.</li>
           <li>The assessment auto-submits when the timer reaches zero.</li>
-          <li>This is a focus-mode assessment — it runs in fullscreen. Leaving fullscreen or switching tabs will trigger a warning, and repeated attempts submit it automatically.</li>
+          <li>
+            This is a focus-mode assessment
+            {fsSupported
+              ? " — it runs in fullscreen. Leaving fullscreen or switching tabs will trigger a warning, and repeated attempts submit it automatically."
+              : " — switching to another tab or app will trigger a warning, and repeated attempts submit it automatically."}
+          </li>
           <li>Keyboard shortcuts, right-click, and copy/paste are disabled once the assessment starts — only the on-screen options are used to answer.</li>
           <li>Passing score is 50%.</li>
         </ul>
