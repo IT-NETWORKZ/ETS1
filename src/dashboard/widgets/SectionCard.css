@@ -1,0 +1,27 @@
+.sectioncard {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 22px;
+}
+
+.sectioncard__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.sectioncard__title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--navy-950);
+}
+
+.sectioncard__subtitle {
+  font-size: 12px;
+  color: var(--ink-400);
+  margin-top: 3px;
+}

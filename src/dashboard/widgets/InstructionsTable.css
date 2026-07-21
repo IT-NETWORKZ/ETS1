@@ -1,0 +1,28 @@
+.instr__tdname { font-weight: 700; color: var(--navy-950); }
+
+.instr__typepill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--mist-200);
+  color: var(--ink-600);
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.instr__snippet {
+  color: var(--ink-600);
+  display: block;
+  max-width: 320px;
+}
+
+.instr__editbtn {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  background: var(--mist-200);
+  color: var(--navy-950);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+}
+.instr__editbtn:hover { background: #e2e7f0; }

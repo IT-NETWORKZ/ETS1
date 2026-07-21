@@ -1,0 +1,41 @@
+.cprompt__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(7, 18, 38, 0.55);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 220;
+  padding: 20px;
+}
+
+.cprompt__card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  max-width: 380px;
+  width: 100%;
+  padding: 26px 26px 22px;
+  text-align: center;
+}
+
+.cprompt__icon { font-size: 34px; color: #2f7dd1; margin-bottom: 10px; }
+.cprompt__title { font-size: 16px; font-weight: 800; color: var(--navy-950); margin-bottom: 6px; }
+.cprompt__message { font-size: 13px; color: var(--ink-600); margin-bottom: 20px; }
+
+.cprompt__actions { display: flex; gap: 10px; justify-content: center; }
+.cprompt__no {
+  flex: 1;
+  background: var(--mist-200); color: var(--ink-600); border: none;
+  font-size: 13.5px; font-weight: 700;
+  padding: 11px 16px; border-radius: 10px; cursor: pointer;
+}
+.cprompt__no:hover { background: #e2e7f0; }
+.cprompt__yes {
+  flex: 1;
+  background: linear-gradient(135deg, #4f9fe0, #2f7dd1); color: #fff; border: none;
+  font-size: 13.5px; font-weight: 700;
+  padding: 11px 16px; border-radius: 10px; cursor: pointer;
+}
+.cprompt__yes:hover { filter: brightness(1.05); }

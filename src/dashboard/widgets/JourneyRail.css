@@ -1,0 +1,96 @@
+.jrail {
+  position: relative;
+  padding: 6px 6px 0;
+}
+
+.jrail__track {
+  position: absolute;
+  top: 21px;
+  left: 28px;
+  right: 28px;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.jrail__fill {
+  height: 100%;
+  width: 100%;
+  transform-origin: left center;
+  background: linear-gradient(90deg, var(--leaf-300), var(--leaf-400));
+  border-radius: 999px;
+}
+
+.jrail__steps {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+}
+
+.jrail__step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.jrail__dot {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #7b8bab;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  transition: all 0.3s ease;
+}
+
+.jrail__step--done .jrail__dot {
+  background: var(--leaf-500);
+  color: #fff;
+  border-color: var(--leaf-500);
+}
+
+.jrail__step--active .jrail__dot {
+  background: linear-gradient(135deg, var(--leaf-400), var(--leaf-500));
+  color: #fff;
+  border-color: var(--leaf-300);
+  box-shadow: 0 0 0 4px rgba(124, 209, 126, 0.18);
+}
+
+.jrail__pulse {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid var(--leaf-300);
+  animation: jrail-pulse 1.8s ease-out infinite;
+}
+
+@keyframes jrail-pulse {
+  0% { transform: scale(0.85); opacity: 0.8; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+
+.jrail__label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #a9b6cd;
+  text-align: center;
+}
+
+.jrail__step--active .jrail__label,
+.jrail__step--done .jrail__label { color: #fff; }
+
+@media (max-width: 640px) {
+  .jrail__label { display: none; }
+  .jrail__dot { width: 34px; height: 34px; font-size: 16px; }
+  .jrail__track { top: 17px; }
+}

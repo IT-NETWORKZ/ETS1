@@ -1,0 +1,38 @@
+.pagehero {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(120deg, var(--navy-900), var(--navy-800));
+  padding: 46px 0;
+}
+
+.pagehero__title {
+  color: #fff;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  position: relative;
+  z-index: 2;
+}
+
+.pagehero__blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(40px);
+  opacity: 0.5;
+}
+
+.pagehero__blob--1 {
+  width: 260px;
+  height: 260px;
+  background: var(--leaf-500);
+  top: -120px;
+  left: 8%;
+}
+
+.pagehero__blob--2 {
+  width: 220px;
+  height: 220px;
+  background: var(--teal-400);
+  bottom: -120px;
+  right: 10%;
+}

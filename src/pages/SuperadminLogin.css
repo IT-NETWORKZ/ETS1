@@ -1,0 +1,41 @@
+.superadminlogin__wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.superadminlogin__card {
+  max-width: 480px;
+  width: 100%;
+}
+
+.superadminlogin__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.superadminlogin__remember {
+  margin-bottom: 0 !important;
+}
+
+.superadminlogin__forgot {
+  font-size: 13px;
+  font-weight: 600;
+  color: #7c5cff;
+  text-decoration: none;
+}
+
+.superadminlogin__forgot:hover {
+  text-decoration: underline;
+}
+
+.superadminlogin__error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #d9534f;
+  margin: -6px 0 16px;
+}

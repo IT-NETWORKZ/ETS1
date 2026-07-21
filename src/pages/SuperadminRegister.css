@@ -1,0 +1,24 @@
+.superadmincard {
+  border-top: 3px solid #7c5cff;
+}
+
+.superadmincard__banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: rgba(124, 92, 255, 0.08);
+  color: #7c5cff;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.superadmincard__banner svg { font-size: 17px; flex-shrink: 0; }
+
+.superadmincard__submit {
+  background: linear-gradient(135deg, #9b85ff, #7c5cff) !important;
+  color: #fff !important;
+}
+
+.superadminaside {
+  background: linear-gradient(150deg, #241b40, #14102a) !important;
+}

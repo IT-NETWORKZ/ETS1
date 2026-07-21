@@ -1,0 +1,43 @@
+.progressbar { margin-bottom: 16px; }
+.progressbar:last-child { margin-bottom: 0; }
+
+.progressbar__head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+  margin-bottom: 6px;
+}
+.progressbar__head span:first-child { font-weight: 700; color: var(--navy-950); }
+.progressbar__count { color: var(--ink-400); }
+
+.progressbar__track {
+  height: 8px;
+  background: var(--mist-200);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.progressbar__fill { height: 100%; border-radius: 999px; }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.emptystate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 32px 16px;
+  color: var(--ink-400);
+  text-align: center;
+}
+.emptystate svg { font-size: 30px; }
+.emptystate p { font-size: 13px; }

@@ -1,0 +1,57 @@
+.topbar {
+  background: linear-gradient(90deg, var(--navy-950), var(--navy-900));
+  color: #cdd6e6;
+  font-size: 13px;
+  position: relative;
+  z-index: 60;
+}
+
+.topbar__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 42px;
+}
+
+.topbar__contacts {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.topbar__item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.topbar__item:hover { color: var(--leaf-300); }
+
+.topbar__item svg { font-size: 15px; opacity: 0.8; }
+
+.topbar__divider {
+  width: 1px;
+  height: 14px;
+  background: rgba(255,255,255,0.18);
+}
+
+.topbar__cta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, var(--amber-400), var(--amber-500));
+  color: #2a1a00;
+  font-weight: 700;
+  font-size: 12.5px;
+  padding: 7px 16px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 760px) {
+  .topbar__item span { display: none; }
+  .topbar__contacts { gap: 10px; }
+}

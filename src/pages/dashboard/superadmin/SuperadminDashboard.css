@@ -1,0 +1,78 @@
+/* ---- Signature dark command-console scope ----
+   Redefining the shared design tokens here restyles every nested shared
+   widget (StatCard, SectionCard, DataTable, Badge, ...) to dark mode
+   without touching their own CSS files. */
+.supconsole {
+  --white: #121d34;
+  --line: rgba(255, 255, 255, 0.09);
+  --navy-950: #f3f6fc;
+  --ink-600: #b9c4dd;
+  --ink-400: #7f8ead;
+  --mist-100: #0d1728;
+  --mist-200: #1c2942;
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 10px 30px rgba(0, 0, 0, 0.45);
+
+  position: relative;
+  margin: -26px -28px -60px;
+  padding: 26px 28px 60px;
+  background:
+    radial-gradient(700px 260px at 90% -10%, rgba(124, 92, 255, 0.16), transparent),
+    radial-gradient(500px 220px at 5% 10%, rgba(43, 196, 217, 0.08), transparent),
+    linear-gradient(180deg, #0a1220, #0d1728 60%);
+  min-height: calc(100vh - 68px);
+}
+
+.supconsole__heading { color: #fff; }
+.supconsole__subheading { color: #8b98b8; }
+
+@media (max-width: 980px) {
+  .supconsole { margin: -20px -16px -40px; padding: 20px 16px 40px; }
+}
+
+.healthitem__pulse {
+  position: relative;
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  margin-right: 9px;
+  background: currentColor;
+}
+.healthitem__pulse--success { color: var(--leaf-400); }
+.healthitem__pulse--warning { color: var(--amber-400); }
+.healthitem__pulse--danger { color: #ff6b6b; }
+.healthitem__pulse::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  animation: opskanban-ping 1.8s ease-out infinite;
+}
+
+.usagecell { display: flex; align-items: center; gap: 8px; min-width: 120px; }
+.usagecell__track { flex: 1; height: 6px; background: var(--mist-200); border-radius: 999px; overflow: hidden; }
+.usagecell__fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--teal-400), #7c5cff); }
+.usagecell span { font-size: 12px; font-weight: 700; color: var(--navy-950); white-space: nowrap; }
+
+.healthlist { display: flex; flex-direction: column; gap: 14px; }
+.healthitem { display: flex; align-items: center; justify-content: space-between; }
+.healthitem__label { font-size: 13px; color: var(--ink-600); font-weight: 600; }
+
+.modqueue { display: flex; flex-direction: column; gap: 12px; }
+.modqueue__item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  background: var(--mist-100);
+  border-radius: 10px;
+}
+.modqueue__icon { font-size: 20px; color: #7c5cff; flex-shrink: 0; }
+.modqueue__body { flex: 1; min-width: 0; }
+.modqueue__title { font-size: 13px; font-weight: 700; color: var(--navy-950); }
+.modqueue__meta { font-size: 11.5px; color: var(--ink-400); margin-top: 2px; }
+
+.auditlist { display: flex; flex-direction: column; gap: 14px; }
+.audititem { display: flex; align-items: flex-start; gap: 10px; }
+.audititem__icon { font-size: 17px; color: var(--ink-400); margin-top: 2px; flex-shrink: 0; }
+.audititem__action { font-size: 12.5px; color: var(--navy-950); font-weight: 600; line-height: 1.5; }
+.audititem__meta { font-size: 11px; color: var(--ink-400); margin-top: 2px; }

@@ -1,0 +1,58 @@
+.rte {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--white);
+}
+
+.rte__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 7px 8px;
+  background: var(--mist-100);
+  border-bottom: 1px solid var(--line);
+}
+
+.rte__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px; height: 30px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink-600);
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.rte__btn:hover { background: var(--mist-200); color: var(--navy-950); }
+
+.rte__divider {
+  width: 1px; height: 18px;
+  background: var(--line);
+  margin: 0 4px;
+}
+
+.rte__body { position: relative; }
+
+.rte__placeholder {
+  position: absolute;
+  top: 12px; left: 14px;
+  font-size: 13.5px;
+  color: var(--ink-400);
+  pointer-events: none;
+}
+
+.rte__editable {
+  min-height: 140px;
+  padding: 12px 14px;
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--navy-950);
+  outline: none;
+}
+.rte__editable ul, .rte__editable ol { padding-left: 22px; margin: 6px 0; }
+.rte__editable a { color: #2f7dd1; text-decoration: underline; }
+.rte__editable p { margin: 0 0 8px; }

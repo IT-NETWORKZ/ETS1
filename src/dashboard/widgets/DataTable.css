@@ -1,0 +1,32 @@
+.datatable__wrap { overflow-x: auto; }
+
+.datatable { width: 100%; border-collapse: collapse; min-width: 520px; }
+
+.datatable th {
+  text-align: left;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-400);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.datatable td {
+  padding: 12px 10px;
+  font-size: 13px;
+  color: var(--ink-600);
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.datatable tr:last-child td { border-bottom: none; }
+
+.datatable__empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--ink-400);
+  font-size: 13px;
+}

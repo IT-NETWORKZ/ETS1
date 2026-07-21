@@ -1,0 +1,26 @@
+.sqbscope {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.sqbscope__icon {
+  font-size: 20px;
+  color: #7c5cff;
+  flex-shrink: 0;
+}
+.sqbscope__select {
+  flex: 1;
+  min-width: 220px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--navy-950);
+  background: var(--white);
+}
+.sqbscope__select:focus {
+  outline: none;
+  border-color: #7c5cff;
+}
