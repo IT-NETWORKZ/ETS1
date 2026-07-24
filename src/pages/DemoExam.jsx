@@ -35,6 +35,16 @@ function fullscreenSupported() {
   return !!(el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen);
 }
 
+// Mobile fullscreen is unreliable — browser chrome (address bar, gesture nav)
+// can silently exit fullscreen without the user actually leaving the page.
+// We don't police fullscreen-exit on these devices; visibilitychange + the
+// back-gesture guard still cover real navigation away from the exam.
+function isMobileDevice() {
+  const ua = navigator.userAgent || "";
+  const coarsePointer = window.matchMedia?.("(pointer: coarse)").matches;
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(ua) || coarsePointer;
+}
+
 async function requestFullscreenSafe(el) {
   const target = el || document.documentElement;
   try {
@@ -78,6 +88,7 @@ export default function DemoExam() {
   const [showSubmitSuccess, setShowSubmitSuccess] = useState(false);
   const [keyLockNotice, setKeyLockNotice] = useState(false);
   const [fsSupported] = useState(fullscreenSupported); // computed once, device doesn't change mid-session
+  const [isMobile] = useState(isMobileDevice); // computed once, device doesn't change mid-session
   const keyNoticeRef = useRef(0);
   const keyNoticeTimeoutRef = useRef(null);
   const timerRef = useRef(null);
@@ -90,6 +101,22 @@ export default function DemoExam() {
 
   const questions = useMemo(() => (subjectId ? QUESTION_BANK[subjectId] : []), [subjectId]);
   const subjectName = SUBJECTS.find((s) => s.id === subjectId)?.name;
+
+  function registerViolation(type) {
+    if (suppressFocusRef.current) return;
+    violationRef.current += 1;
+    setViolationCount(violationRef.current);
+
+    if (violationRef.current >= MAX_VIOLATIONS) {
+      clearInterval(timerRef.current);
+      finalizeAndSave(timeLeftRef.current, answersRef.current);
+      exitFullscreenSafe();
+      setFocusWarning(null);
+      setShowMalpractice(true);
+    } else {
+      setFocusWarning(type);
+    }
+  }
 
   useEffect(() => {
     if (stage !== "exam") return;
@@ -106,7 +133,11 @@ export default function DemoExam() {
     return () => clearInterval(timerRef.current);
   }, [stage]);
 
-   // Prevent the page behind the exam from scrolling/bouncing on mobile while it's running.
+  useEffect(() => {
+    if (stage === "exam") setVisited((v) => ({ ...v, [current]: true }));
+  }, [current, stage]);
+
+  // Prevent the page behind the exam from scrolling/bouncing on mobile while it's running.
   useEffect(() => {
     if (stage === "exam") {
       document.body.classList.add("demoexam-body-lock");
@@ -116,33 +147,12 @@ export default function DemoExam() {
     return () => document.body.classList.remove("demoexam-body-lock");
   }, [stage]);
 
-
-  useEffect(() => {
-    if (stage === "exam") setVisited((v) => ({ ...v, [current]: true }));
-  }, [current, stage]);
-
   useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
   useEffect(() => { answersRef.current = answers; }, [answers]);
 
   // ---- Focus-mode: fullscreen + tab-switch monitoring during the live exam ----
   useEffect(() => {
     if (stage !== "exam") return;
-
-    function registerViolation(type) {
-      if (suppressFocusRef.current) return;
-      violationRef.current += 1;
-      setViolationCount(violationRef.current);
-
-      if (violationRef.current >= MAX_VIOLATIONS) {
-        clearInterval(timerRef.current);
-        finalizeAndSave(timeLeftRef.current, answersRef.current);
-        exitFullscreenSafe();
-        setFocusWarning(null);
-        setShowMalpractice(true);
-      } else {
-        setFocusWarning(type);
-      }
-    }
 
     function handleFsChange() {
       const isFs = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
@@ -154,10 +164,12 @@ export default function DemoExam() {
     }
 
     // Only police real fullscreen-exit events on browsers that actually support the
-    // Fullscreen API. On iOS Safari fullscreen never truly engages, so this event
-    // would never/incorrectly fire — we rely on the CSS-locked layout there instead
-    // and still enforce the tab-switch rule everywhere.
-    if (fsSupported) {
+    // Fullscreen API AND aren't mobile. On iOS Safari fullscreen never truly engages,
+    // and on mobile in general (Android included) the fullscreen state flickers on its
+    // own due to browser chrome/gesture nav — so we'd punish users for nothing.
+    // We rely on the CSS-locked layout there instead and still enforce the
+    // tab-switch rule (and the back-gesture guard below) everywhere.
+    if (fsSupported && !isMobile) {
       document.addEventListener("fullscreenchange", handleFsChange);
       document.addEventListener("webkitfullscreenchange", handleFsChange);
     }
@@ -168,7 +180,28 @@ export default function DemoExam() {
       document.removeEventListener("visibilitychange", handleVisibility);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stage, fsSupported]);
+  }, [stage, fsSupported, isMobile]);
+
+  // ---- Block the edge-swipe / hardware / browser "Back" gesture during the live exam ----
+  // Android's back gesture (and any browser/hardware back) doesn't background the
+  // page, so visibilitychange never fires for it. Instead it just navigates the
+  // route away. We plant a dummy history entry so back triggers popstate here,
+  // which we intercept and treat as a focus violation.
+  useEffect(() => {
+    if (stage !== "exam") return;
+
+    window.history.pushState({ examGuard: true }, "");
+
+    function handlePopState() {
+      if (suppressFocusRef.current) return;
+      window.history.pushState({ examGuard: true }, "");
+      registerViolation("tabswitch");
+    }
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage]);
 
   // Always leave fullscreen if the user navigates away from this page entirely
   useEffect(() => () => exitFullscreenSafe(), []);
@@ -396,6 +429,7 @@ export default function DemoExam() {
             <Instructions
               subjectName={subjectName}
               fsSupported={fsSupported}
+              isMobile={isMobile}
               onBack={() => setStage("select")}
               onStart={startExam}
             />
@@ -480,14 +514,14 @@ export default function DemoExam() {
         )}
       </AnimatePresence>
 
-      {/* ---- Focus-mode violation (exited fullscreen / switched tab) ---- */}
+      {/* ---- Focus-mode violation (exited fullscreen / switched tab / back gesture) ---- */}
       <AnimatePresence>
         {focusWarning && (
           <Modal>
             <div className="exammodal__icon exammodal__icon--warn"><HiOutlineExclamationTriangle /></div>
-            <h3>{focusWarning === "fullscreen" ? "You left fullscreen mode" : "You switched away from the assessment"}</h3>
+            <h3>{focusWarning === "fullscreen" ? "You left fullscreen mode" : "You left the assessment"}</h3>
             <p>
-              This assessment runs in focus mode — please stay in fullscreen and on this tab until
+              This assessment runs in focus mode — please stay on this screen until
               you submit. This was warning <strong>{violationCount} of {MAX_VIOLATIONS}</strong>.
               After {MAX_VIOLATIONS} warnings the assessment will be submitted automatically and
               you'll need to contact admin to retake it.
@@ -534,7 +568,7 @@ export default function DemoExam() {
             <div className="exammodal__icon exammodal__icon--time"><HiOutlineExclamationTriangle /></div>
             <h3>Assessment submitted automatically</h3>
             <p>
-              We detected repeated focus-mode violations (leaving fullscreen or switching tabs), so
+              We detected repeated focus-mode violations (leaving the assessment screen), so
               this attempt has been submitted with your current answers. If this was unintentional,
               please contact admin at <strong>support@ex-am.com</strong> to arrange a retake.
             </p>
@@ -675,7 +709,7 @@ function SelectSubject({ subjectId, onChange, onNext, onHistory }) {
   );
 }
 
-function Instructions({ subjectName, fsSupported, onBack, onStart }) {
+function Instructions({ subjectName, fsSupported, isMobile, onBack, onStart }) {
   return (
     <div className="container instructions">
       <motion.div
@@ -693,9 +727,9 @@ function Instructions({ subjectName, fsSupported, onBack, onStart }) {
           <li>The assessment auto-submits when the timer reaches zero.</li>
           <li>
             This is a focus-mode assessment
-            {fsSupported
-              ? " — it runs in fullscreen. Leaving fullscreen or switching tabs will trigger a warning, and repeated attempts submit it automatically."
-              : " — switching to another tab or app will trigger a warning, and repeated attempts submit it automatically."}
+            {fsSupported && !isMobile
+              ? " — it runs in fullscreen. Leaving fullscreen, switching tabs, or navigating back will trigger a warning, and repeated attempts submit it automatically."
+              : " — switching to another app or navigating back will trigger a warning, and repeated attempts submit it automatically."}
           </li>
           <li>Keyboard shortcuts, right-click, and copy/paste are disabled once the assessment starts — only the on-screen options are used to answer.</li>
           <li>Passing score is 50%.</li>
@@ -901,7 +935,7 @@ function History({ history, onBack, onReview }) {
         transition={{ duration: 0.4 }}
       >
         <div className="examhistory__head">
-          <h2>Exam Historys</h2>
+          <h2>Exam History</h2>
           <button className="examhistory__back" onClick={onBack}><HiOutlineArrowLeft /> Back</button>
         </div>
 
