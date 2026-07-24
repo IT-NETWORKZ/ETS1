@@ -16,26 +16,47 @@ function formatDate(ts) {
 }
 
 /**
- * records: submitted question records (id, pattern, subject, questionText, createdAt, status, ...)
+ * records: submitted question records — either a "batch" record shaped like
+ *   { id, createdAt, status, questions: [...] } produced by Submit All, or a
+ *   flat single-question legacy record. Each record is exactly ONE row in
+ *   the table; if it holds multiple questions, Preview lets you browse them
+ *   without ever mixing in questions from a different submission.
  * onToggleStatus(id, nextStatus)
- * onEdit(record) — load this record back into the form above for editing
- * onDelete(id) — remove just this one record
+ * onEdit(record) — load a question back into the form above for editing
+ * onDelete(id) — remove a whole flat record (legacy, non-batch)
+ * onDeleteQuestion(batchId, index) — remove a single question from a batch
  * extraColumns: optional MasterTable column defs inserted between Subject and Date (e.g. Tenant)
  */
-export default function SubmittedQuestionsTable({ records, onToggleStatus, onEdit, onDelete, extraColumns = [] }) {
+export default function SubmittedQuestionsTable({ records, onToggleStatus, onEdit, onDelete, onDeleteQuestion, extraColumns = [] }) {
   const [previewId, setPreviewId] = useState(null);
-  const index = records.findIndex((r) => r.id === previewId);
-  const current = index >= 0 ? records[index] : null;
+  const [qIndex, setQIndex] = useState(0);
+
+  const previewRecord = records.find((r) => r.id === previewId) || null;
+  const isBatch = previewRecord ? Array.isArray(previewRecord.questions) : false;
+  const previewQuestions = previewRecord ? (isBatch ? previewRecord.questions : [previewRecord]) : [];
+  const current = previewQuestions[qIndex] || null;
   const meta = current ? QUESTION_PATTERNS.find((p) => p.id === current.pattern) : null;
 
-  const rows = records.map((r, i) => ({ ...r, srNo: i + 1 }));
+  const rows = records.map((r, i) => {
+    const qList = Array.isArray(r.questions) ? r.questions : [r];
+    const first = qList[0] || {};
+    return {
+      ...r,
+      srNo: i + 1,
+      subject: r.subject || first.subject,
+      topic: r.topic || first.topic,
+      questionText: first.questionText,
+      questionCount: qList.length,
+    };
+  });
 
   const columns = [
     { key: "srNo", label: "Sr. No.", sortable: true },
     { key: "subject", label: "Subject", sortable: true, render: (r) => r.subject || "No subject" },
+    { key: "questionCount", label: "Questions", sortable: true },
     ...extraColumns,
     { key: "createdAt", label: "Date", sortable: true, render: (r) => formatDate(r.createdAt) },
-    { key: "preview", label: "Preview", render: (r) => <PreviewButton onClick={() => setPreviewId(r.id)} /> },
+    { key: "preview", label: "Preview", render: (r) => <PreviewButton onClick={() => openPreview(r.id)} /> },
     {
       key: "status", label: "Status",
       render: (r) => (
@@ -47,16 +68,34 @@ export default function SubmittedQuestionsTable({ records, onToggleStatus, onEdi
     },
   ];
 
-  function goPrev() { if (index > 0) setPreviewId(records[index - 1].id); }
-  function goNext() { if (index < records.length - 1) setPreviewId(records[index + 1].id); }
+  function openPreview(id) {
+    setPreviewId(id);
+    setQIndex(0);
+  }
+
+  function closePreview() {
+    setPreviewId(null);
+  }
+
+  function goPrev() { setQIndex((i) => Math.max(0, i - 1)); }
+  function goNext() { setQIndex((i) => Math.min(previewQuestions.length - 1, i + 1)); }
 
   function handleEdit() {
-    setPreviewId(null);
-    onEdit(current);
+    closePreview();
+    if (isBatch) {
+      onEdit({ ...current, _batchId: previewRecord.id, _batchIndex: qIndex });
+    } else {
+      onEdit(previewRecord);
+    }
   }
 
   function handleDelete() {
-    onDelete(current.id);
+    if (isBatch) {
+      onDeleteQuestion?.(previewRecord.id, qIndex);
+    } else {
+      onDelete(previewRecord.id);
+    }
+    closePreview();
   }
 
   return (
@@ -75,7 +114,7 @@ export default function SubmittedQuestionsTable({ records, onToggleStatus, onEdi
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => setPreviewId(null)}
+            onClick={closePreview}
           >
             <motion.div
               className="sqg__card"
@@ -86,14 +125,14 @@ export default function SubmittedQuestionsTable({ records, onToggleStatus, onEdi
               onClick={(e) => e.stopPropagation()}
             >
               <div className="sqg__head">
-                <span className="sqg__headcount">Question {index + 1} of {records.length}</span>
-                <button type="button" className="sqg__close" onClick={() => setPreviewId(null)} aria-label="Close">
+                <span className="sqg__headcount">Question {qIndex + 1} of {previewQuestions.length}</span>
+                <button type="button" className="sqg__close" onClick={closePreview} aria-label="Close">
                   <HiOutlineXMark />
                 </button>
               </div>
 
               <div className="sqg__meta">
-                {current.subject || "No subject"}{current.topic ? ` · ${current.topic}` : ""}
+                {current.subject || previewRecord.subject || "No subject"}{current.topic ? ` · ${current.topic}` : ""}
               </div>
 
               <div className="sqg__body">
@@ -101,7 +140,7 @@ export default function SubmittedQuestionsTable({ records, onToggleStatus, onEdi
               </div>
 
               <div className="sqg__footer">
-                <button type="button" className="sqg__navbtn" disabled={index === 0} onClick={goPrev} title="Previous">
+                <button type="button" className="sqg__navbtn" disabled={qIndex === 0} onClick={goPrev} title="Previous">
                   <HiOutlineArrowLeft /> Previous
                 </button>
                 <div className="sqg__footeractions">
@@ -112,7 +151,7 @@ export default function SubmittedQuestionsTable({ records, onToggleStatus, onEdi
                     <HiOutlinePencil /> Edit
                   </button>
                 </div>
-                <button type="button" className="sqg__navbtn" disabled={index === records.length - 1} onClick={goNext} title="Next">
+                <button type="button" className="sqg__navbtn" disabled={qIndex === previewQuestions.length - 1} onClick={goNext} title="Next">
                   Next <HiOutlineArrowRight />
                 </button>
               </div>

@@ -12,8 +12,7 @@ import ConfirmPrompt from "../../../../dashboard/widgets/ConfirmPrompt";
 import { createQuestionBankStore } from "../../../../dashboard/questionBankStore";
 import { Badge } from "../../../../dashboard/widgets/Misc";
 import { SUPERADMIN_NAV } from "../superadminNav";
-import { QUESTION_PATTERNS } from "../../admin/questions/questionPatterns";
-import PatternFields from "../../admin/questions/PatternFields";
+import PatternFields from "./PatternFields";
 import "../../../../dashboard/DashboardShared.css";
 import "../../admin/questions/QuestionBank.css";
 import "./SuperadminQuestionBank.css";
@@ -28,15 +27,19 @@ const TENANTS = [
 const EMPTY_DRAFT = {
   id: null, subject: "", topic: "", difficulty: "Moderate", marks: "1", negMarks: "0", language: "English",
   questionText: "",
-  options: [{ id: 1, text: "" }, { id: 2, text: "" }, { id: 3, text: "" }, { id: 4, text: "" }],
-  correctOption: null, correctOptions: [],
-  tfAnswer: null,
+  questionMedia: { image: null, audio: null, video: null },
+  options: [
+    { id: 1, text: "", media: { image: null, audio: null, video: null } },
+    { id: 2, text: "", media: { image: null, audio: null, video: null } },
+    { id: 3, text: "", media: { image: null, audio: null, video: null } },
+    { id: 4, text: "", media: { image: null, audio: null, video: null } },
+  ],
+  correctOptions: [],
 };
 
 export default function SuperadminQuestionBank() {
   const [tenant, setTenant] = useState(TENANTS[0]);
   const [excelFile, setExcelFile] = useState(null);
-  const [pattern, setPattern] = useState("single");
   const [draft, setDraft] = useState(EMPTY_DRAFT);
   const [saved, setSaved] = useState([]);
   const [justSaved, setJustSaved] = useState(false);
@@ -49,10 +52,11 @@ export default function SuperadminQuestionBank() {
     e.preventDefault();
     if (!draft.questionText.trim()) return;
 
-    // Editing a record that's already been submitted to the table below —
-    // update it directly in the persisted store, then ask if they want to add another.
-    if (draft.id && draft.id.startsWith("q-")) {
-      questionBankStore.update(draft.id, { pattern, tenant, ...draft });
+    // Editing one question that lives inside an already-submitted batch row —
+    // update just that question in place, then ask if they want to add another.
+    if (draft._batchId) {
+      const { _batchId, _batchIndex, ...clean } = draft;
+      questionBankStore.updateQuestionInBatch(_batchId, _batchIndex, { tenant, ...clean });
       setJustSaved(true);
       setTimeout(() => setJustSaved(false), 1800);
       setShowAddAnother(true);
@@ -60,8 +64,8 @@ export default function SuperadminQuestionBank() {
     }
 
     setSaved((s) => {
-      if (draft.id) return s.map((q) => (q.id === draft.id ? { ...q, ...draft, pattern, tenant } : q));
-      return [...s, { ...draft, id: `draft-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, pattern, tenant }];
+      if (draft.id) return s.map((q) => (q.id === draft.id ? { ...q, ...draft, tenant } : q));
+      return [...s, { ...draft, id: `draft-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, tenant }];
     });
     setDraft(EMPTY_DRAFT);
     setJustSaved(true);
@@ -69,7 +73,6 @@ export default function SuperadminQuestionBank() {
   }
 
   function handleEditQuestion(item) {
-    setPattern(item.pattern);
     setTenant(item.tenant || TENANTS[0]);
     setDraft({ ...item });
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -83,8 +86,14 @@ export default function SuperadminQuestionBank() {
   function handleSubmitAll() {
     if (saved.length === 0) return;
     const now = Date.now();
-    const records = saved.map((q, i) => ({ ...q, id: `q-${now}-${i}`, createdAt: now + i, status: "enabled" }));
-    questionBankStore.addMany(records);
+    const batch = {
+      id: `batch-${now}`,
+      createdAt: now,
+      status: "enabled",
+      tenant,
+      questions: saved.map((q) => ({ ...q })),
+    };
+    questionBankStore.addMany([batch]);
     setSaved([]);
     setDraft(EMPTY_DRAFT);
   }
@@ -101,8 +110,6 @@ export default function SuperadminQuestionBank() {
     setDraft(EMPTY_DRAFT);
     setShowAddAnother(false);
   }
-
-  const activePattern = QUESTION_PATTERNS.find((p) => p.id === pattern);
 
   return (
     <DashboardLayout
@@ -149,22 +156,8 @@ export default function SuperadminQuestionBank() {
         </div>
       </SectionCard>
 
-      {/* ---- Manually-written question builder (7 patterns) ---- */}
-      <SectionCard title="Write a Question Manually" subtitle="Choose a pattern, then fill in its fields" delay={0.12}>
-        <div className="qpatterns">
-          {QUESTION_PATTERNS.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              className={"qpattern" + (pattern === p.id ? " qpattern--active" : "")}
-              onClick={() => setPattern(p.id)}
-            >
-              <p.icon />
-              <span>{p.label}</span>
-            </button>
-          ))}
-        </div>
-
+      {/* ---- Manually-written question builder ---- */}
+      <SectionCard title="Write a Question Manually" subtitle="Fill in the fields below" delay={0.12}>
         <form className="qform" onSubmit={handleSave}>
           <div className="qform__common">
             <label className="qfield">
@@ -197,12 +190,7 @@ export default function SuperadminQuestionBank() {
             </label>
           </div>
 
-          <div className="qform__pattern">
-            <span className="qform__patterntag"><activePattern.icon /> {activePattern.label}</span>
-            <span className="qform__patternhint">{activePattern.hint}</span>
-          </div>
-
-          <PatternFields pattern={pattern} draft={draft} setDraft={setDraft} />
+          <PatternFields draft={draft} setDraft={setDraft} />
 
           <div className="qform__footer">
             <button type="submit" className="qform__save">
@@ -244,11 +232,12 @@ export default function SuperadminQuestionBank() {
           onToggleStatus={questionBankStore.setStatus}
           onEdit={handleEditQuestion}
           onDelete={questionBankStore.remove}
+          onDeleteQuestion={questionBankStore.removeQuestionFromBatch}
           extraColumns={[{ key: "tenant", label: "Tenant", sortable: true, render: (r) => r.tenant || TENANTS[0] }]}
         />
       </SectionCard>
 
-      <SavedQuestionsGlow items={saved} patterns={QUESTION_PATTERNS} onEdit={handleEditQuestion} onDelete={handleDeleteDraft} />
+      <SavedQuestionsGlow items={saved} onEdit={handleEditQuestion} onDelete={handleDeleteDraft} />
 
       <ConfirmPrompt
         open={showAddAnother}

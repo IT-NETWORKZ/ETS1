@@ -6,7 +6,9 @@ import "./SavedQuestionsGlow.css";
 
 /**
  * items: array of saved-but-not-submitted question drafts (chronological order)
- * patterns: QUESTION_PATTERNS list, used to resolve icon/label per item
+ * patterns: optional QUESTION_PATTERNS list, used to resolve icon/label per item
+ *   (admin/superadmin pass this; the candidate builder has only one pattern
+ *   and can omit it entirely)
  * onEdit(item): load this item back into the form for editing
  * onDelete(item): remove this item from the saved list
  */
@@ -21,7 +23,7 @@ export default function SavedQuestionsGlow({ items, patterns, onEdit, onDelete }
   if (items.length === 0) return null;
 
   const current = items[index];
-  const meta = patterns.find((p) => p.id === current?.pattern);
+  const meta = patterns ? patterns.find((p) => p.id === current?.pattern) : null;
 
   function goPrev() { setIndex((i) => Math.max(0, i - 1)); }
   function goNext() { setIndex((i) => Math.min(items.length - 1, i + 1)); }

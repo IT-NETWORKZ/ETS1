@@ -7,7 +7,7 @@ export const loginCandidate = (email, password) =>
   });
 
 export const loginAdmin = (email, password) =>
-  api.post("/log", {
+  api.post("/AdminLogin", {
     Email: email,
     Password: password,
   });

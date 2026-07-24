@@ -106,6 +106,17 @@ export default function DemoExam() {
     return () => clearInterval(timerRef.current);
   }, [stage]);
 
+   // Prevent the page behind the exam from scrolling/bouncing on mobile while it's running.
+  useEffect(() => {
+    if (stage === "exam") {
+      document.body.classList.add("demoexam-body-lock");
+    } else {
+      document.body.classList.remove("demoexam-body-lock");
+    }
+    return () => document.body.classList.remove("demoexam-body-lock");
+  }, [stage]);
+
+
   useEffect(() => {
     if (stage === "exam") setVisited((v) => ({ ...v, [current]: true }));
   }, [current, stage]);
@@ -597,7 +608,7 @@ function SelectSubject({ subjectId, onChange, onNext, onHistory }) {
           </div>
         </motion.div>
 
-        <motion.button
+        {/* <motion.button
           className="examselect__history-btn"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -607,7 +618,7 @@ function SelectSubject({ subjectId, onChange, onNext, onHistory }) {
           onClick={onHistory}
         >
           <HiOutlineClipboardDocumentList /> Exam History
-        </motion.button>
+        </motion.button> */}
       </div>
 
       <div className="examselect__grid">
@@ -870,9 +881,9 @@ function Result({ attempt, onRetake, onHistory }) {
           <motion.button className="result__retake" whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }} onClick={onRetake}>
             Retake Demo Exam
           </motion.button>
-          <button className="result__history" onClick={onHistory}>
+          {/* <button className="result__history" onClick={onHistory}>
             <HiOutlineClipboardDocumentList /> Exam History
-          </button>
+          </button> */}
           <Link to="/" className="result__home">Back to Home</Link>
         </div>
       </motion.div>
@@ -890,7 +901,7 @@ function History({ history, onBack, onReview }) {
         transition={{ duration: 0.4 }}
       >
         <div className="examhistory__head">
-          <h2>Exam History</h2>
+          <h2>Exam Historys</h2>
           <button className="examhistory__back" onClick={onBack}><HiOutlineArrowLeft /> Back</button>
         </div>
 
