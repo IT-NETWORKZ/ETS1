@@ -1,0 +1,14 @@
+.fstatus {
+  border: none;
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.fstatus:focus {
+  outline: none;
+}

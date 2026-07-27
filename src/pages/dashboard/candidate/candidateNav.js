@@ -10,6 +10,7 @@ import {
   HiOutlineVideoCamera,
   HiOutlineTicket,
   HiOutlineRectangleGroup,
+  HiOutlineChatBubbleLeftEllipsis,
 } from "react-icons/hi2";
 
 export const CANDIDATE_NAV = [
@@ -68,6 +69,12 @@ export const CANDIDATE_NAV = [
     label: "Question Bank",
     icon: HiOutlineDocument,
   },
+
+    {
+      to: "/dashboard/candidate/feedback",
+      label: "Feedback",
+      icon: HiOutlineChatBubbleLeftEllipsis,
+    },
 
   {
     to: "/dashboard/candidate/profile",

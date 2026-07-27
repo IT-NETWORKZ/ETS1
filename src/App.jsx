@@ -34,6 +34,10 @@ import SuperadminQuestionBank from "./pages/dashboard/superadmin/questions/Quest
 import SuperadminExamInstructions from "./pages/dashboard/superadmin/instructions/ExamInstructions";
 import AddCategory from "./pages/dashboard/superadmin/category/AddCategory";
 import CandidateProfile from "./pages/dashboard/candidate/profile/CandidateProfile";
+import CandidateFeedback from "./pages/dashboard/candidate/feedback/CandidateFeedback";
+import AdminFeedback from "./pages/dashboard/admin/feedback/AdminFeedback";
+import SuperadminCandidateFeedback from "./pages/dashboard/superadmin/feedback/SuperadminCandidateFeedback";
+import SuperadminAdminFeedback from "./pages/dashboard/superadmin/feedback/SuperadminAdminFeedback";
 import "./App.css";
 
 export default function App() {
@@ -83,13 +87,17 @@ export default function App() {
               <Route path="/dashboard/candidate/exams/public-open" element={<PublicOpenExam />} />
               <Route path="/dashboard/candidate/questions" element={<CandidateQuestionBank />} />
               <Route path="/dashboard/candidate/profile" element={<CandidateProfile />} />
+              <Route path="/dashboard/candidate/feedback" element={<CandidateFeedback />} />
               <Route path="/dashboard/admin" element={<AdminDashboard />} />
               <Route path="/dashboard/admin/questions" element={<QuestionBank />} />
               <Route path="/dashboard/admin/instructions" element={<AdminExamInstructions />} />
+              <Route path="/dashboard/admin/feedback" element={<AdminFeedback />} />
               <Route path="/dashboard/superadmin" element={<SuperadminDashboard />} />
               <Route path="/dashboard/superadmin/questions" element={<SuperadminQuestionBank />} />
               <Route path="/dashboard/superadmin/instructions" element={<SuperadminExamInstructions />} />
               <Route path="/dashboard/superadmin/category" element={<AddCategory />} />
+              <Route path="/dashboard/superadmin/feedback/candidate" element={<SuperadminCandidateFeedback />} />
+              <Route path="/dashboard/superadmin/feedback/admin" element={<SuperadminAdminFeedback />} />
             </Routes>
           </AnimatePresence>
         </main>

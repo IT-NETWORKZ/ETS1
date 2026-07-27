@@ -3,7 +3,7 @@
    widget (StatCard, SectionCard, DataTable, Badge, ...) to dark mode
    without touching their own CSS files. */
 .supconsole {
-  --white: #121d34;
+  --white: #ffffff;
   --line: rgba(255, 255, 255, 0.09);
   --navy-950: #f3f6fc;
   --ink-600: #b9c4dd;
@@ -16,14 +16,11 @@
   position: relative;
   margin: -26px -28px -60px;
   padding: 26px 28px 60px;
-  background:
-    radial-gradient(700px 260px at 90% -10%, rgba(124, 92, 255, 0.16), transparent),
-    radial-gradient(500px 220px at 5% 10%, rgba(43, 196, 217, 0.08), transparent),
-    linear-gradient(180deg, #0a1220, #0d1728 60%);
+  background: #ffffff;
   min-height: calc(100vh - 68px);
 }
 
-.supconsole__heading { color: #fff; }
+.supconsole__heading { color: #071226; }
 .supconsole__subheading { color: #8b98b8; }
 
 @media (max-width: 980px) {
