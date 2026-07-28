@@ -19,6 +19,6 @@ export const SUPERADMIN_NAV = [
       { to: "/dashboard/superadmin/feedback/admin", label: "Admin", icon: HiOutlineBriefcase },
     ],
   },
-  { to: "/exam-price", label: "Packages & Pricing", icon: HiOutlineBanknotes },
+  { to: "/dashboard/superadmin/pricing-plans", label: "Packages & Pricing", icon: HiOutlineBanknotes },
   { to: "/dashboard/superadmin", label: "Audit & Security", icon: HiOutlineShieldCheck },
 ];
