@@ -39,6 +39,9 @@ import AdminFeedback from "./pages/dashboard/admin/feedback/AdminFeedback";
 import SuperadminCandidateFeedback from "./pages/dashboard/superadmin/feedback/SuperadminCandidateFeedback";
 import SuperadminAdminFeedback from "./pages/dashboard/superadmin/feedback/SuperadminAdminFeedback";
 import "./App.css";
+import PricingPlans from "./pages/dashboard/candidate/subscription_plans/PricingPlans";
+import SubscriptionPlans_SA from "./pages/dashboard/superadmin/PricingPlans_Superadmin/SubscriptionPlans_SA";
+import { AdminSubscription } from "./pages/dashboard/admin/Subscription/AdminSubscription";
 
 export default function App() {
   const location = useLocation();
@@ -68,6 +71,8 @@ export default function App() {
         <main className="app__main">
           <AnimatePresence mode="wait">
             <Routes location={location} key={location.pathname}>
+
+              {/* Home Pages Routes */}
               <Route path="/" element={<PageTransition><Home /></PageTransition>} />
               <Route path="/about" element={<PageTransition><About /></PageTransition>} />
               <Route path="/tech-support" element={<PageTransition><TechSupport /></PageTransition>} />
@@ -77,6 +82,8 @@ export default function App() {
               <Route path="/register/superadmin" element={<PageTransition><SuperadminRegister /></PageTransition>} />
               <Route path="/login/superadmin" element={<PageTransition><SuperadminLogin /></PageTransition>} />
               <Route path="/demo-exam" element={<PageTransition><DemoExam /></PageTransition>} />
+
+              {/* dashboard candidate Pages Routes */}
               <Route path="/dashboard/candidate" element={<CandidateDashboard />} />
               <Route path="/dashboard/candidate/exams/demo" element={<DemoExamCandidate />} />
               <Route path="/dashboard/candidate/exams/exam" element={<Exam />} />
@@ -88,18 +95,26 @@ export default function App() {
               <Route path="/dashboard/candidate/questions" element={<CandidateQuestionBank />} />
               <Route path="/dashboard/candidate/profile" element={<CandidateProfile />} />
               <Route path="/dashboard/candidate/feedback" element={<CandidateFeedback />} />
+              <Route path="/dashboard/candidate/pricing-plans" element={<PricingPlans />} />
+
+              {/* dashboard admin Pages Routes */}
               <Route path="/dashboard/admin" element={<AdminDashboard />} />
               <Route path="/dashboard/admin/questions" element={<QuestionBank />} />
               <Route path="/dashboard/admin/instructions" element={<AdminExamInstructions />} />
               <Route path="/dashboard/admin/feedback" element={<AdminFeedback />} />
+              <Route path="/dashboard/admin/pricing-plans" element={<AdminSubscription />} />
+
+              {/* dashboard superadmin Pages Routes */}
               <Route path="/dashboard/superadmin" element={<SuperadminDashboard />} />
               <Route path="/dashboard/superadmin/questions" element={<SuperadminQuestionBank />} />
               <Route path="/dashboard/superadmin/instructions" element={<SuperadminExamInstructions />} />
               <Route path="/dashboard/superadmin/category" element={<AddCategory />} />
+              <Route path="/dashboard/superadmin/pricing-plans" element={<SubscriptionPlans_SA />} />
               <Route path="/dashboard/superadmin/feedback/candidate" element={<SuperadminCandidateFeedback />} />
               <Route path="/dashboard/superadmin/feedback/admin" element={<SuperadminAdminFeedback />} />
             </Routes>
           </AnimatePresence>
+          
         </main>
         {!isBare && <Footer />}
         {!isBare && <BackToTop />}

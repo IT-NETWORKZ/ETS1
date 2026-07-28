@@ -59,7 +59,7 @@ export const CANDIDATE_NAV = [
 },
 
   {
-    to: "/exam-price",
+    to: "/dashboard/candidate/pricing-plans",
     label: "Subscription",
     icon: HiOutlineAcademicCap,
   },

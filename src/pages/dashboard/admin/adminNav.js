@@ -10,6 +10,6 @@ export const ADMIN_NAV = [
   { to: "/dashboard/admin/questions", label: "Question Bank", icon: HiOutlineDocumentPlus },
   { to: "/dashboard/admin/instructions", label: "Exam Instructions", icon: HiOutlineChatBubbleBottomCenterText },
   { to: "/dashboard/admin/feedback", label: "Feedback", icon: HiOutlineChatBubbleLeftEllipsis },
-  { to: "/exam-price", label: "Subscription", icon: HiOutlineClipboardDocumentCheck },
+  { to: "/dashboard/admin/pricing-plans", label: "Subscription", icon: HiOutlineClipboardDocumentCheck },
   { to: "/tech-support", label: "Support", icon: HiOutlineChatBubbleLeftRight },
 ];
