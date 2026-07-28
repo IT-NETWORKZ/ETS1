@@ -36,6 +36,26 @@
 .qexcel__submit:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
 .qexcel__submit:disabled { background: var(--mist-200); color: var(--ink-400); cursor: not-allowed; }
 
+.qexcel__result { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.qexcel__resultok {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600; color: var(--leaf-500);
+  background: rgba(63, 145, 66, 0.08); border: 1px solid rgba(63, 145, 66, 0.25);
+  border-radius: 10px; padding: 10px 14px;
+}
+.qexcel__resultok svg { font-size: 16px; flex-shrink: 0; }
+.qexcel__resulterr {
+  border: 1px solid rgba(217, 83, 79, 0.3); background: rgba(217, 83, 79, 0.06);
+  border-radius: 10px; padding: 10px 14px;
+}
+.qexcel__resulterrhead {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 700; color: #d9534f;
+}
+.qexcel__resulterrhead svg { font-size: 16px; flex-shrink: 0; }
+.qexcel__resulterr ul { margin: 8px 0 0; padding-left: 20px; }
+.qexcel__resulterr li { font-size: 12.5px; color: var(--ink-600); line-height: 1.6; }
+
 /* ---- Pattern picker ---- */
 .qpatterns {
   display: grid;

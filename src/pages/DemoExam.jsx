@@ -9,6 +9,7 @@ import {
 } from "react-icons/hi2";
 import { SUBJECTS, QUESTION_BANK } from "../data/questions";
 import { loadHistory, saveAttempt, formatDuration, formatDate } from "../data/examHistory";
+import { shuffleArray } from "../utils/shuffle";
 import "./DemoExam.css";
 
 const DURATION = 10 * 60; // 10 minutes, matches "10 min." on the source site
@@ -99,7 +100,11 @@ export default function DemoExam() {
   const suppressFocusRef = useRef(false);
   const navigate = useNavigate();
 
-  const questions = useMemo(() => (subjectId ? QUESTION_BANK[subjectId] : []), [subjectId]);
+  // Base bank order for the selected subject; `questions` is a freshly-shuffled
+  // copy taken at the start of each attempt (see startExam), so replaying the
+  // Demo Exam — or two different candidates — never sees the same order twice.
+  const baseQuestions = useMemo(() => (subjectId ? QUESTION_BANK[subjectId] : []), [subjectId]);
+  const [questions, setQuestions] = useState([]);
   const subjectName = SUBJECTS.find((s) => s.id === subjectId)?.name;
 
   function registerViolation(type) {
@@ -273,6 +278,7 @@ export default function DemoExam() {
   }
 
   function startExam() {
+    setQuestions(shuffleArray(baseQuestions));
     setAnswers({});
     setMarked({});
     setVisited({ 0: true });

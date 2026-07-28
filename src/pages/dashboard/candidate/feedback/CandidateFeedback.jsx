@@ -14,7 +14,7 @@ export default function CandidateFeedback() {
       userName="Amrapali Ambade"
       userMeta="Candidate · Master Plan"
     >
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+      <motion.div className="feedback__header" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
         <h1 className="dashpage__heading">Feedback</h1>
         <p className="dashpage__subheading">Tell us about your experience — your rating and comments help us improve.</p>
       </motion.div>

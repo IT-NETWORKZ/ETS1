@@ -9,6 +9,7 @@ import {
 } from "react-icons/hi2";
 import { EXAM_SUBJECTS as SUBJECTS, EXAM_QUESTION_BANK as QUESTION_BANK } from "../../../../../data/examQuestions";
 import { loadHistory, saveAttempt, formatDuration, formatDate } from "../../../../../data/examRunHistory";
+import { shuffleArray } from "../../../../../utils/shuffle";
 import "./Exam.css";
 
 const DURATION = 15 * 60; // 15 minutes for this exam's 12-question sets
@@ -81,7 +82,11 @@ export default function Exam() {
   const suppressFocusRef = useRef(false);
   const navigate = useNavigate();
 
-  const questions = useMemo(() => (subjectId ? QUESTION_BANK[subjectId] : []), [subjectId]);
+  // Base bank order for the selected subject; the actual `questions` used to run
+  // the exam is a freshly-shuffled copy taken at the start of each attempt (see
+  // startExam), so every launch — and every candidate — gets a different order.
+  const baseQuestions = useMemo(() => (subjectId ? QUESTION_BANK[subjectId] : []), [subjectId]);
+  const [questions, setQuestions] = useState([]);
   const subjectName = SUBJECTS.find((s) => s.id === subjectId)?.name;
 
   useEffect(() => {
@@ -216,6 +221,7 @@ export default function Exam() {
   }
 
   function startExam() {
+    setQuestions(shuffleArray(baseQuestions));
     setAnswers({});
     setMarked({});
     setVisited({ 0: true });

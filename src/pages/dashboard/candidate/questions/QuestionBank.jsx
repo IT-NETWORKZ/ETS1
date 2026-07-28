@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   HiOutlineArrowDownTray, HiOutlineArrowUpTray, HiOutlineDocumentCheck,
-  HiOutlineCheckCircle, HiOutlinePaperAirplane,
+  HiOutlineCheckCircle, HiOutlinePaperAirplane, HiOutlineExclamationTriangle,
 } from "react-icons/hi2";
 import DashboardLayout from "../../../../dashboard/DashboardLayout";
 import SectionCard from "../../../../dashboard/widgets/SectionCard";
@@ -10,6 +10,7 @@ import SavedQuestionsGlow from "../../../../dashboard/widgets/SavedQuestionsGlow
 import SubmittedQuestionsTable from "../../../../dashboard/widgets/SubmittedQuestionsTable";
 import ConfirmPrompt from "../../../../dashboard/widgets/ConfirmPrompt";
 import { createQuestionBankStore } from "../../../../dashboard/questionBankStore";
+import { downloadSampleExcel, parseQuestionExcel } from "../../../../dashboard/questionExcel";
 import { CANDIDATE_NAV } from "../candidateNav";
 import PatternFields from "./PatternFields";
 import "../../../../dashboard/DashboardShared.css";
@@ -32,6 +33,8 @@ const EMPTY_DRAFT = {
 
 export default function QuestionBank() {
   const [excelFile, setExcelFile] = useState(null);
+  const [excelBusy, setExcelBusy] = useState(false);
+  const [excelResult, setExcelResult] = useState(null);
   const [draft, setDraft] = useState(EMPTY_DRAFT);
   const [saved, setSaved] = useState([]);
   const [justSaved, setJustSaved] = useState(false);
@@ -39,6 +42,30 @@ export default function QuestionBank() {
   const submittedRecords = questionBankStore.useList();
 
   const patch = (p) => setDraft((d) => ({ ...d, ...p }));
+
+  async function handleUploadExcel() {
+    if (!excelFile) return;
+    setExcelBusy(true);
+    setExcelResult(null);
+    try {
+      const { valid, errors } = await parseQuestionExcel(excelFile);
+      if (valid.length > 0) {
+        setSaved((s) => [
+          ...s,
+          ...valid.map((q) => ({
+            ...q,
+            id: `draft-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          })),
+        ]);
+      }
+      setExcelResult({ added: valid.length, errors });
+    } catch (err) {
+      setExcelResult({ added: 0, errors: [{ row: "-", message: err.message }] });
+    } finally {
+      setExcelBusy(false);
+      setExcelFile(null);
+    }
+  }
 
   function handleSave(e) {
     e.preventDefault();
@@ -114,7 +141,10 @@ export default function QuestionBank() {
       {/* ---- Bulk upload via Excel ---- */}
       <SectionCard title="Bulk Upload via Excel" subtitle="Fastest way to add a large question set" delay={0.05}>
         <div className="qexcel">
-          <a href="#" className="qexcel__sample" onClick={(e) => e.preventDefault()}>
+          <a
+            href="#" className="qexcel__sample"
+            onClick={(e) => { e.preventDefault(); downloadSampleExcel(); }}
+          >
             <HiOutlineArrowDownTray /> Download Sample Excel
           </a>
           <label className="qexcel__drop">
@@ -122,13 +152,38 @@ export default function QuestionBank() {
             <span>{excelFile ? excelFile.name : "Click to choose a .xls / .xlsx file, or drag it here"}</span>
             <input
               type="file" accept=".xls,.xlsx" hidden
-              onChange={(e) => setExcelFile(e.target.files[0] || null)}
+              onChange={(e) => { setExcelFile(e.target.files[0] || null); setExcelResult(null); }}
             />
           </label>
-          <button type="button" className="qexcel__submit" disabled={!excelFile}>
-            <HiOutlineDocumentCheck /> Upload &amp; Validate
+          <button type="button" className="qexcel__submit" disabled={!excelFile || excelBusy} onClick={handleUploadExcel}>
+            <HiOutlineDocumentCheck /> {excelBusy ? "Validating…" : "Upload & Validate"}
           </button>
         </div>
+
+        {excelResult && (
+          <div className="qexcel__result">
+            {excelResult.added > 0 && (
+              <div className="qexcel__resultok">
+                <HiOutlineCheckCircle />
+                {excelResult.added} question{excelResult.added === 1 ? "" : "s"} added from the sheet — review them in the "Saved" bubble bottom-right, then hit Submit below.
+              </div>
+            )}
+            {excelResult.errors.length > 0 && (
+              <div className="qexcel__resulterr">
+                <div className="qexcel__resulterrhead">
+                  <HiOutlineExclamationTriangle />
+                  {excelResult.errors.length} row{excelResult.errors.length === 1 ? "" : "s"} skipped
+                </div>
+                <ul>
+                  {excelResult.errors.slice(0, 8).map((er, i) => (
+                    <li key={i}>Row {er.row}: {er.message}</li>
+                  ))}
+                  {excelResult.errors.length > 8 && <li>…and {excelResult.errors.length - 8} more</li>}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
       </SectionCard>
 
       {/* ---- Manually-written question builder ---- */}
