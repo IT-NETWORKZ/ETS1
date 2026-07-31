@@ -17,7 +17,7 @@ import PatternFields from "./PatternFields";
 import "../../../../dashboard/DashboardShared.css";
 import "../../admin/questions/QuestionBank.css";
 import "./SuperadminQuestionBank.css";
-
+import { addQuestion } from "../../../../api/authApi"
 const questionBankStore = createQuestionBankStore("questionBankRecords_superadmin_v1");
 
 const TENANTS = [
@@ -76,28 +76,114 @@ export default function SuperadminQuestionBank() {
     }
   }
 
-  function handleSave(e) {
-    e.preventDefault();
-    if (!draft.questionText.trim()) return;
+  // function handleSave(e) {
+  //   e.preventDefault();
+  //   if (!draft.questionText.trim()) return;
 
-    // Editing one question that lives inside an already-submitted batch row —
-    // update just that question in place, then ask if they want to add another.
-    if (draft._batchId) {
-      const { _batchId, _batchIndex, ...clean } = draft;
-      questionBankStore.updateQuestionInBatch(_batchId, _batchIndex, { tenant, ...clean });
-      setJustSaved(true);
-      setTimeout(() => setJustSaved(false), 1800);
-      setShowAddAnother(true);
+  //   // Editing one question that lives inside an already-submitted batch row —
+  //   // update just that question in place, then ask if they want to add another.
+  //   if (draft._batchId) {
+  //     const { _batchId, _batchIndex, ...clean } = draft;
+  //     questionBankStore.updateQuestionInBatch(_batchId, _batchIndex, { tenant, ...clean });
+  //     setJustSaved(true);
+  //     setTimeout(() => setJustSaved(false), 1800);
+  //     setShowAddAnother(true);
+  //     return;
+  //   }
+
+  //   setSaved((s) => {
+  //     if (draft.id) return s.map((q) => (q.id === draft.id ? { ...q, ...draft, tenant } : q));
+  //     return [...s, { ...draft, id: `draft-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, tenant }];
+  //   });
+  //   setDraft(EMPTY_DRAFT);
+  //   setJustSaved(true);
+  //   setTimeout(() => setJustSaved(false), 1800);
+  // }
+  async function handleSave(e) {
+    e.preventDefault();
+
+    if (!draft.questionText.trim()) {
+      alert("Please enter a question.");
       return;
     }
 
-    setSaved((s) => {
-      if (draft.id) return s.map((q) => (q.id === draft.id ? { ...q, ...draft, tenant } : q));
-      return [...s, { ...draft, id: `draft-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, tenant }];
-    });
-    setDraft(EMPTY_DRAFT);
-    setJustSaved(true);
-    setTimeout(() => setJustSaved(false), 1800);
+    const selectedCorrectOption = draft.correctOptions?.[0] ?? 1;
+
+    const now = new Date().toISOString();
+
+    const payload = {
+      sCategory: draft.category || null,
+      sSubName: Number(draft.subject),          // Subject ID
+      sLevel: Number(draft.difficulty),         // Difficulty ID
+
+      sQue1: draft.questionText,
+      sQueE1: draft.questionHindi || draft.questionText,
+
+      sOption1: draft.options[0]?.text || "",
+      sOptionE1: draft.options[0]?.hindi || draft.options[0]?.text || "",
+
+      sOption2: draft.options[1]?.text || "",
+      sOptionE2: draft.options[1]?.hindi || draft.options[1]?.text || "",
+
+      sOption3: draft.options[2]?.text || "",
+      sOptionE3: draft.options[2]?.hindi || draft.options[2]?.text || "",
+
+      sOption4: draft.options[3]?.text || "",
+      sOptionE4: draft.options[3]?.hindi || draft.options[3]?.text || "",
+
+      sOption5: draft.options[4]?.text || "",
+      sOptionE5: draft.options[4]?.hindi || draft.options[4]?.text || "",
+
+      sOption6: draft.options[5]?.text || "",
+      sOptionE6: draft.options[5]?.hindi || draft.options[5]?.text || "",
+
+      sOption7: draft.options[6]?.text || "",
+      sOptionE7: draft.options[6]?.hindi || draft.options[6]?.text || "",
+
+      sOption8: draft.options[7]?.text || "",
+      sOptionE8: draft.options[7]?.hindi || draft.options[7]?.text || "",
+
+      // API expects this property name
+      sFLag: Number(selectedCorrectOption),
+
+      RegDate: now,
+      ModDate: now,
+      nBit: true,
+      nSABit: true,
+    };
+
+    try {
+      const response = await addQuestion(payload);
+
+      console.log("Question Added:", response.data);
+
+      setJustSaved(true);
+      setTimeout(() => setJustSaved(false), 1800);
+
+      setSaved((prev) => [
+        ...prev,
+        {
+          ...draft,
+          id:
+            response.data?.nID ||
+            response.data?.nQueId ||
+            response.data?.id ||
+            Date.now(),
+          tenant,
+        },
+      ]);
+
+      setDraft(EMPTY_DRAFT);
+    } catch (err) {
+      console.error(err);
+
+      alert(
+        err.response?.data?.message ||
+        err.response?.data ||
+        err.message ||
+        "Failed to save question."
+      );
+    }
   }
 
   function handleEditQuestion(item) {

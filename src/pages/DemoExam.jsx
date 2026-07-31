@@ -12,7 +12,9 @@ import { loadHistory, saveAttempt, formatDuration, formatDate } from "../data/ex
 import { shuffleArray } from "../utils/shuffle";
 import "./DemoExam.css";
 
-const DURATION = 10 * 60; // 10 minutes, matches "10 min." on the source site
+import { getSubjects } from "../api/authApi";
+
+const DURATION = 10 * 60;
 const MAX_VIOLATIONS = 3;
 
 function formatTime(s) {
@@ -29,17 +31,11 @@ function computeScore(questions, answers) {
   return { correct, total: questions.length };
 }
 
-// iOS Safari has no Fullscreen API at all (only <video> can go fullscreen there).
-// Detect support up front instead of discovering it only when the call silently fails.
 function fullscreenSupported() {
   const el = document.documentElement;
   return !!(el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen);
 }
 
-// Mobile fullscreen is unreliable — browser chrome (address bar, gesture nav)
-// can silently exit fullscreen without the user actually leaving the page.
-// We don't police fullscreen-exit on these devices; visibilitychange + the
-// back-gesture guard still cover real navigation away from the exam.
 function isMobileDevice() {
   const ua = navigator.userAgent || "";
   const coarsePointer = window.matchMedia?.("(pointer: coarse)").matches;
@@ -61,7 +57,7 @@ function exitFullscreenSafe() {
   const isFs = document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement;
   if (!isFs) return;
   try {
-    if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+    if (document.exitFullscreen) document.exitFullscreen().catch(() => { });
     else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
     else if (document.msExitFullscreen) document.msExitFullscreen();
   } catch {
@@ -70,7 +66,6 @@ function exitFullscreenSafe() {
 }
 
 export default function DemoExam() {
-  // select | instructions | exam | result | history | review
   const [stage, setStage] = useState("select");
   const [subjectId, setSubjectId] = useState("");
   const [current, setCurrent] = useState(0);
@@ -88,8 +83,8 @@ export default function DemoExam() {
   const [showMalpractice, setShowMalpractice] = useState(false);
   const [showSubmitSuccess, setShowSubmitSuccess] = useState(false);
   const [keyLockNotice, setKeyLockNotice] = useState(false);
-  const [fsSupported] = useState(fullscreenSupported); // computed once, device doesn't change mid-session
-  const [isMobile] = useState(isMobileDevice); // computed once, device doesn't change mid-session
+  const [fsSupported] = useState(fullscreenSupported);
+  const [isMobile] = useState(isMobileDevice);
   const keyNoticeRef = useRef(0);
   const keyNoticeTimeoutRef = useRef(null);
   const timerRef = useRef(null);
@@ -100,12 +95,13 @@ export default function DemoExam() {
   const suppressFocusRef = useRef(false);
   const navigate = useNavigate();
 
-  // Base bank order for the selected subject; `questions` is a freshly-shuffled
-  // copy taken at the start of each attempt (see startExam), so replaying the
-  // Demo Exam — or two different candidates — never sees the same order twice.
   const baseQuestions = useMemo(() => (subjectId ? QUESTION_BANK[subjectId] : []), [subjectId]);
   const [questions, setQuestions] = useState([]);
   const subjectName = SUBJECTS.find((s) => s.id === subjectId)?.name;
+
+  const [subjects, setSubjects] = useState([]);
+
+  console.log(subjects)
 
   function registerViolation(type) {
     if (suppressFocusRef.current) return;
@@ -142,7 +138,6 @@ export default function DemoExam() {
     if (stage === "exam") setVisited((v) => ({ ...v, [current]: true }));
   }, [current, stage]);
 
-  // Prevent the page behind the exam from scrolling/bouncing on mobile while it's running.
   useEffect(() => {
     if (stage === "exam") {
       document.body.classList.add("demoexam-body-lock");
@@ -155,7 +150,6 @@ export default function DemoExam() {
   useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
   useEffect(() => { answersRef.current = answers; }, [answers]);
 
-  // ---- Focus-mode: fullscreen + tab-switch monitoring during the live exam ----
   useEffect(() => {
     if (stage !== "exam") return;
 
@@ -187,11 +181,6 @@ export default function DemoExam() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage, fsSupported, isMobile]);
 
-  // ---- Block the edge-swipe / hardware / browser "Back" gesture during the live exam ----
-  // Android's back gesture (and any browser/hardware back) doesn't background the
-  // page, so visibilitychange never fires for it. Instead it just navigates the
-  // route away. We plant a dummy history entry so back triggers popstate here,
-  // which we intercept and treat as a focus violation.
   useEffect(() => {
     if (stage !== "exam") return;
 
@@ -208,12 +197,9 @@ export default function DemoExam() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage]);
 
-  // Always leave fullscreen if the user navigates away from this page entirely
   useEffect(() => () => exitFullscreenSafe(), []);
 
-  // ---- Keyboard lock: only plain typing characters pass through; everything
-  // else (shortcuts, function keys, Tab, Esc, Alt/Meta combos, PrintScreen…)
-  // is blocked while the live exam is running. ----
+
   useEffect(() => {
     if (stage !== "exam") return;
 
@@ -253,7 +239,7 @@ export default function DemoExam() {
     document.addEventListener("paste", handleClipboard);
 
     if (navigator.keyboard?.lock) {
-      navigator.keyboard.lock(["Escape", "Tab", "AltLeft", "AltRight", "MetaLeft", "MetaRight"]).catch(() => {});
+      navigator.keyboard.lock(["Escape", "Tab", "AltLeft", "AltRight", "MetaLeft", "MetaRight"]).catch(() => { });
     }
 
     return () => {
@@ -380,6 +366,34 @@ export default function DemoExam() {
     setStage("review");
   }
 
+
+  const loadSubjects = async () => {
+    try {
+      const res = await getSubjects();
+
+      console.log("Subjects Response:", res.data);
+
+      // If API returns an array
+      if (Array.isArray(res.data)) {
+        setSubjects(res.data);
+      }
+      // If API returns { data: [...] }
+      else if (Array.isArray(res.data.data)) {
+        setSubjects(res.data.data);
+      }
+      // Fallback
+      else {
+        setSubjects([]);
+      }
+    } catch (err) {
+      console.error("Failed to load subjects:", err);
+      setSubjects([]);
+    }
+  };
+
+  useEffect(() => {
+    loadSubjects();
+  }, []);
   return (
     <div className={"demoexam" + (stage === "exam" ? " demoexam--locked" : "")} ref={examRootRef}>
       <div className="demoexam__topbar">
@@ -422,6 +436,7 @@ export default function DemoExam() {
         {stage === "select" && (
           <motion.div key="select" className="demoexam__stage" {...fade}>
             <SelectSubject
+              subjects={subjects}
               subjectId={subjectId}
               onChange={setSubjectId}
               onNext={() => setStage("instructions")}
@@ -618,7 +633,11 @@ function Modal({ children, onClose }) {
   );
 }
 
-function SelectSubject({ subjectId, onChange, onNext, onHistory }) {
+function SelectSubject({ subjects,
+  subjectId,
+  onChange,
+  onNext,
+  onHistory, }) {
   return (
     <div className="container examselect">
       <div className="examselect__topline">
@@ -630,12 +649,19 @@ function SelectSubject({ subjectId, onChange, onNext, onHistory }) {
         >
           <label>Subject Name</label>
           <div className="examselect__row">
-            <select value={subjectId} onChange={(e) => onChange(e.target.value)}>
+            <select
+              value={subjectId}
+              onChange={(e) => onChange(e.target.value)}
+            >
               <option value="">Select Subject Name</option>
-              {SUBJECTS.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
+
+              {subjects.map((subject) => (
+                <option key={subject.nID} value={subject.nID}>
+                  {subject.sName}
+                </option>
               ))}
             </select>
+
             <motion.button
               className="examselect__add"
               disabled={!subjectId}
@@ -648,17 +674,7 @@ function SelectSubject({ subjectId, onChange, onNext, onHistory }) {
           </div>
         </motion.div>
 
-        {/* <motion.button
-          className="examselect__history-btn"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.05 }}
-          whileHover={{ y: -2 }}
-          whileTap={{ scale: 0.96 }}
-          onClick={onHistory}
-        >
-          <HiOutlineClipboardDocumentList /> Exam History
-        </motion.button> */}
+   
       </div>
 
       <div className="examselect__grid">

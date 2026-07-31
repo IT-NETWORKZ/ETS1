@@ -27,6 +27,7 @@ function MediaAttach({ media, onChange, className }) {
     reader.onload = () => onChange({ ...m, [key]: { name: file.name, url: reader.result } });
     reader.readAsDataURL(file);
   };
+  
   const clearFile = (key, e) => {
     e.preventDefault();
     e.stopPropagation();
