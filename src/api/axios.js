@@ -9,7 +9,7 @@ export function getCookie(name) {
 }
 
 const api = axios.create({
-  baseURL: "https://etestsystem.com/api/",
+  baseURL: "https://localhost:44352/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -20,7 +20,7 @@ api.interceptors.request.use(
   (config) => {
     const token = getCookie("token");
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers.Authorization =`Bearer ${token}`;
     }
     return config;
   },
