@@ -7,12 +7,11 @@ import {
   HiOutlineExclamationTriangle, HiOutlineClipboardDocumentList,
   HiOutlineEye, HiOutlineArrowsPointingOut,
 } from "react-icons/hi2";
-import { SUBJECTS, QUESTION_BANK } from "../data/questions";
 import { loadHistory, saveAttempt, formatDuration, formatDate } from "../data/examHistory";
 import { shuffleArray } from "../utils/shuffle";
 import "./DemoExam.css";
 
-import { getSubjects } from "../api/authApi";
+import { getSubjects, getExamQuestions } from "../api/authApi";
 
 const DURATION = 10 * 60;
 const MAX_VIOLATIONS = 3;
@@ -85,6 +84,8 @@ export default function DemoExam() {
   const [keyLockNotice, setKeyLockNotice] = useState(false);
   const [fsSupported] = useState(fullscreenSupported);
   const [isMobile] = useState(isMobileDevice);
+  const [questionsLoading, setQuestionsLoading] = useState(false);
+
   const keyNoticeRef = useRef(0);
   const keyNoticeTimeoutRef = useRef(null);
   const timerRef = useRef(null);
@@ -95,14 +96,85 @@ export default function DemoExam() {
   const suppressFocusRef = useRef(false);
   const navigate = useNavigate();
 
-  const baseQuestions = useMemo(() => (subjectId ? QUESTION_BANK[subjectId] : []), [subjectId]);
   const [questions, setQuestions] = useState([]);
-  const subjectName = SUBJECTS.find((s) => s.id === subjectId)?.name;
-
   const [subjects, setSubjects] = useState([]);
+  const subjectName = subjects.find((s) => String(s.nID) === String(subjectId))?.sName || "";
+  // ---- Subjects ----
+  const loadSubjects = async () => {
+    try {
+      const res = await getSubjects();
 
-  console.log(subjects)
+      if (Array.isArray(res.data)) {
+        setSubjects(res.data);
+      } else if (Array.isArray(res.data.data)) {
+        setSubjects(res.data.data);
+      } else {
+        setSubjects([]);
+      }
+    } catch (err) {
+      console.error("Failed to load subjects:", err);
+      setSubjects([]);
+    }
+  };
 
+  useEffect(() => {
+    loadSubjects();
+  }, []);
+
+  // ---- Questions (fixed: now lives inside the component so setQuestions is in scope) ----
+  const loadQuestions = async (id) => {
+    setQuestionsLoading(true);
+    try {
+      const res = await getExamQuestions(id);
+      // console.log("Raw questions response:", res.data);
+
+      let list = [];
+      if (Array.isArray(res.data)) {
+        list = res.data;
+      } else if (Array.isArray(res.data?.data)) {
+        list = res.data.data;
+      } else if (Array.isArray(res.data?.data?.data)) {
+        list = res.data.data.data;
+      }
+
+      //console.log("Extracted list:", list);
+
+      const normalized = list.map((item) => ({
+        ...item, // keep raw fields first
+        q: item.q ?? item.question ?? item.sQuestion ?? item.Question ?? "",
+        options:
+          item.options ??
+          item.Options ??
+          [item.option1, item.option2, item.option3, item.option4]
+            .filter((o) => o !== undefined && o !== null),
+        answer:
+          item.answer ??
+          item.correctIndex ??
+          item.correctOption ??
+          item.correctAnswer ??
+          0,
+      }));
+
+      //  console.log("Normalized questions:", normalized);
+      setQuestions(normalized);
+    } catch (err) {
+      console.error("Failed to load questions:", err);
+      setQuestions([]);
+    } finally {
+      setQuestionsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!subjectId) {
+      setQuestions([]);
+      return;
+    }
+    //console.log("Fetching questions for subjectId:", subjectId);
+    loadQuestions(subjectId);
+  }, [subjectId]);
+  
+  //console.log("questions", questions)
   function registerViolation(type) {
     if (suppressFocusRef.current) return;
     violationRef.current += 1;
@@ -162,12 +234,6 @@ export default function DemoExam() {
       if (document.hidden) registerViolation("tabswitch");
     }
 
-    // Only police real fullscreen-exit events on browsers that actually support the
-    // Fullscreen API AND aren't mobile. On iOS Safari fullscreen never truly engages,
-    // and on mobile in general (Android included) the fullscreen state flickers on its
-    // own due to browser chrome/gesture nav — so we'd punish users for nothing.
-    // We rely on the CSS-locked layout there instead and still enforce the
-    // tab-switch rule (and the back-gesture guard below) everywhere.
     if (fsSupported && !isMobile) {
       document.addEventListener("fullscreenchange", handleFsChange);
       document.addEventListener("webkitfullscreenchange", handleFsChange);
@@ -199,7 +265,6 @@ export default function DemoExam() {
 
   useEffect(() => () => exitFullscreenSafe(), []);
 
-
   useEffect(() => {
     if (stage !== "exam") return;
 
@@ -214,7 +279,7 @@ export default function DemoExam() {
         && !e.ctrlKey && !e.altKey && !e.metaKey;
 
       if (isTypingTarget(target) && (printable || editingKey)) {
-        return; // allow normal typing inside an actual text field
+        return;
       }
 
       e.preventDefault();
@@ -256,7 +321,7 @@ export default function DemoExam() {
 
   function showKeyLockNotice() {
     const now = Date.now();
-    if (now - keyNoticeRef.current < 1200) return; // throttle repeat presses
+    if (now - keyNoticeRef.current < 1200) return;
     keyNoticeRef.current = now;
     setKeyLockNotice(true);
     clearTimeout(keyNoticeTimeoutRef.current);
@@ -264,7 +329,7 @@ export default function DemoExam() {
   }
 
   function startExam() {
-    setQuestions(shuffleArray(baseQuestions));
+    setQuestions((prev) => shuffleArray([...prev]));
     setAnswers({});
     setMarked({});
     setVisited({ 0: true });
@@ -275,8 +340,6 @@ export default function DemoExam() {
     setFocusWarning(null);
     suppressFocusRef.current = false;
     setStage("exam");
-    // Call immediately (not after any await) so mobile browsers still treat this
-    // as a direct result of the user's tap — delayed calls get silently rejected.
     requestFullscreenSafe(examRootRef.current);
   }
 
@@ -366,34 +429,6 @@ export default function DemoExam() {
     setStage("review");
   }
 
-
-  const loadSubjects = async () => {
-    try {
-      const res = await getSubjects();
-
-      console.log("Subjects Response:", res.data);
-
-      // If API returns an array
-      if (Array.isArray(res.data)) {
-        setSubjects(res.data);
-      }
-      // If API returns { data: [...] }
-      else if (Array.isArray(res.data.data)) {
-        setSubjects(res.data.data);
-      }
-      // Fallback
-      else {
-        setSubjects([]);
-      }
-    } catch (err) {
-      console.error("Failed to load subjects:", err);
-      setSubjects([]);
-    }
-  };
-
-  useEffect(() => {
-    loadSubjects();
-  }, []);
   return (
     <div className={"demoexam" + (stage === "exam" ? " demoexam--locked" : "")} ref={examRootRef}>
       <div className="demoexam__topbar">
@@ -451,6 +486,8 @@ export default function DemoExam() {
               subjectName={subjectName}
               fsSupported={fsSupported}
               isMobile={isMobile}
+              questionsLoading={questionsLoading}
+              questionsReady={questions.length > 0}
               onBack={() => setStage("select")}
               onStart={startExam}
             />
@@ -535,7 +572,7 @@ export default function DemoExam() {
         )}
       </AnimatePresence>
 
-      {/* ---- Focus-mode violation (exited fullscreen / switched tab / back gesture) ---- */}
+      {/* ---- Focus-mode violation ---- */}
       <AnimatePresence>
         {focusWarning && (
           <Modal>
@@ -633,11 +670,7 @@ function Modal({ children, onClose }) {
   );
 }
 
-function SelectSubject({ subjects,
-  subjectId,
-  onChange,
-  onNext,
-  onHistory, }) {
+function SelectSubject({ subjects, subjectId, onChange, onNext, onHistory }) {
   return (
     <div className="container examselect">
       <div className="examselect__topline">
@@ -673,8 +706,6 @@ function SelectSubject({ subjects,
             </motion.button>
           </div>
         </motion.div>
-
-   
       </div>
 
       <div className="examselect__grid">
@@ -688,7 +719,9 @@ function SelectSubject({ subjects,
           <table className="examselect__table">
             <tbody>
               <tr><td>1</td><td>Exam</td><td>Demo Exam</td></tr>
-              <tr><td>2</td><td>Subject</td><td>{subjectId ? SUBJECTS.find((s) => s.id === subjectId).name : "—"}</td></tr>
+              <tr><td>2</td><td>Subject</td><td>{subjectId
+                ? subjects.find((s) => String(s.nID) === String(subjectId))?.sName
+                : "—"}</td></tr>
               <tr><td>3</td><td>Duration</td><td><strong>10 min.</strong></td></tr>
               <tr><td>4</td><td>Next Re-take</td><td className="examselect__available">Available</td></tr>
               <tr><td>5</td><td>Passing Score</td><td>50.00 %</td></tr>
@@ -731,7 +764,7 @@ function SelectSubject({ subjects,
   );
 }
 
-function Instructions({ subjectName, fsSupported, isMobile, onBack, onStart }) {
+function Instructions({ subjectName, fsSupported, isMobile, questionsLoading, questionsReady, onBack, onStart }) {
   return (
     <div className="container instructions">
       <motion.div
@@ -764,9 +797,10 @@ function Instructions({ subjectName, fsSupported, isMobile, onBack, onStart }) {
             className="instructions__start"
             whileHover={{ y: -2, boxShadow: "0 12px 26px rgba(63,145,66,0.35)" }}
             whileTap={{ scale: 0.97 }}
+            disabled={questionsLoading || !questionsReady}
             onClick={onStart}
           >
-            Start Assessment
+            {questionsLoading ? "Loading questions..." : "Start Assessment"}
           </motion.button>
         </div>
       </motion.div>
@@ -777,6 +811,18 @@ function Instructions({ subjectName, fsSupported, isMobile, onBack, onStart }) {
 function ExamRunner({ questions, current, answers, marked, visited, onSelect, onToggleMark, onGoTo, onNext, onPrev, onSubmit }) {
   const q = questions[current];
   const answeredCount = Object.keys(answers).length;
+
+  const options = [
+    q?.sOption1,
+    q?.sOption2,
+    q?.sOption3,
+    q?.sOption4,
+    q?.sOption5,
+    q?.sOption6,
+    q?.sOption7,
+    q?.sOption8,
+  ].filter((opt) => opt && opt.trim() !== "");
+  if (!q) return null;
 
   return (
     <div className="container examrunner">
@@ -795,21 +841,32 @@ function ExamRunner({ questions, current, answers, marked, visited, onSelect, on
             </button>
           </div>
           <div className="examcard__scrollbody">
-            <h3 className="examcard__question">{q.q}</h3>
+
+            <h3 className="examcard__question">
+              {q?.sQue1}
+            </h3>
+
             <div className="examcard__options">
-              {q.options.map((opt, i) => (
+              {options.map((opt, i) => (
                 <motion.button
                   key={i}
-                  className={"examcard__option" + (answers[current] === i ? " examcard__option--active" : "")}
+                  className={
+                    "examcard__option" +
+                    (answers[current] === i ? " examcard__option--active" : "")
+                  }
                   onClick={() => onSelect(current, i)}
                   whileHover={{ x: 4 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <span className="examcard__option-letter">{String.fromCharCode(65 + i)}</span>
+                  <span className="examcard__option-letter">
+                    {String.fromCharCode(65 + i)}
+                  </span>
+
                   {opt}
                 </motion.button>
               ))}
             </div>
+
           </div>
 
           <div className="examcard__nav">
@@ -937,9 +994,6 @@ function Result({ attempt, onRetake, onHistory }) {
           <motion.button className="result__retake" whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }} onClick={onRetake}>
             Retake Demo Exam
           </motion.button>
-          {/* <button className="result__history" onClick={onHistory}>
-            <HiOutlineClipboardDocumentList /> Exam History
-          </button> */}
           <Link to="/" className="result__home">Back to Home</Link>
         </div>
       </motion.div>

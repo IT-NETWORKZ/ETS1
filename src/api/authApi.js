@@ -23,4 +23,7 @@ export const addQuestion = (payload) =>
   api.post("/SubCatQuestion/Add", payload); 
 
 export const getSubjects  = (payload) =>
-  api.get("/AddSubject/GetAll", payload); 
+  api.get("/AddSubject/GetAll", payload);   
+
+export const getExamQuestions = (id) =>
+  api.get(`/SubCatQuestion/GetQuestionBySubject/${id}`);
